@@ -1,0 +1,171 @@
+# NetSense Configuration
+mqtt:
+  host: "192.168.100.2"
+  port: "1883"
+  user: "mqtt_user"
+  password: "mqtt_password"
+  client_id: "laptop"
+  connect_timeout: 4s
+  ping_interval: 30s
+  reconnect_backoff: 1s
+  payload_active: "ON"
+  payload_inactive: "OFF"
+  payload_available: "online"
+  payload_not_available: "offline"
+  tls: false
+
+device:
+  name: "Work Laptop"
+  model: "NetSense Monitor"
+  manufacturer: "NetSense"
+  identifiers: ["my_laptop_netsense"]
+
+sensors:
+  - name: "Zoom"
+    homeassistant:
+      name: "Zoom Meeting"
+      device_class: "connectivity"
+      state_topic: "homeassistant/binary_sensor/zoom/state"
+      availability_topic: "homeassistant/binary_sensor/zoom/availability"
+      unique_id: "netsense_zoom_01"
+
+    pcap:
+      active_threshold: 5
+      on_delay: 2s
+      off_delay: 30s
+
+    filters:
+      - service: "Zoom UDP Media"
+        direction: "both"
+        protocols: ["udp"]
+        portranges: ["3478", "3479", "8801-8810"]
+        cidrs:
+          - "3.7.35.0/25"
+          - "3.21.137.128/25"
+          - "3.22.11.0/24"
+          - "3.23.93.0/24"
+          - "3.25.41.0/24"
+          - "3.25.48.0/24"
+          - "3.80.20.0/23"
+          - "3.101.32.0/23"
+          - "3.123.128.0/23"
+          - "3.235.64.0/19"
+          - "13.52.146.0/24"
+          - "18.172.115.0/24"
+          - "50.202.0.0/16"
+          - "64.125.62.0/24"
+          - "64.211.144.0/24"
+          - "69.174.57.0/24"
+          - "103.122.166.0/23"
+          - "115.114.115.0/24"
+          - "115.114.131.0/24"
+          - "120.29.148.0/24"
+          - "134.224.0.0/16"
+          - "144.195.0.0/16"
+          - "147.124.96.0/19"
+          - "147.124.128.0/19"
+          - "149.137.0.0/16"
+          - "158.120.0.0/16"
+          - "160.1.0.0/16"
+          - "162.255.36.0/22"
+          - "170.114.0.0/16"
+          - "173.199.0.0/18"
+          - "192.204.12.0/22"
+          - "198.16.126.0/23"
+          - "202.177.200.0/24"
+          - "204.141.28.0/22"
+          - "206.247.0.0/18"
+          - "207.226.132.0/24"
+          - "209.9.211.0/24"
+          - "213.19.144.0/20"
+          - "221.122.88.0/23"
+
+      - service: "Zoom TCP Control"
+        direction: "dst"
+        protocols: ["tcp"]
+        portranges: ["80", "443", "8801", "8802"]
+        cidrs:
+          - "3.7.35.0/25"
+          - "3.21.137.128/25"
+          - "3.22.11.0/24"
+          - "3.23.93.0/24"
+          - "3.25.41.0/24"
+          - "3.25.48.0/24"
+          - "3.80.20.0/23"
+          - "3.101.32.0/23"
+          - "3.123.128.0/23"
+          - "3.235.64.0/19"
+          - "13.52.146.0/24"
+          - "18.172.115.0/24"
+          - "50.202.0.0/16"
+          - "64.125.62.0/24"
+          - "64.211.144.0/24"
+          - "69.174.57.0/24"
+          - "103.122.166.0/23"
+          - "115.114.115.0/24"
+          - "115.114.131.0/24"
+          - "120.29.148.0/24"
+          - "134.224.0.0/16"
+          - "144.195.0.0/16"
+          - "147.124.96.0/19"
+          - "147.124.128.0/19"
+          - "149.137.0.0/16"
+          - "158.120.0.0/16"
+          - "160.1.0.0/16"
+          - "162.255.36.0/22"
+          - "170.114.0.0/16"
+          - "173.199.0.0/18"
+          - "192.204.12.0/22"
+          - "198.16.126.0/23"
+          - "202.177.200.0/24"
+          - "204.141.28.0/22"
+          - "206.247.0.0/18"
+          - "207.226.132.0/24"
+          - "209.9.211.0/24"
+          - "213.19.144.0/20"
+          - "221.122.88.0/23"
+
+  - name: "Teams"
+    homeassistant:
+      name: "Teams Meeting"
+      device_class: "connectivity"
+      state_topic: "homeassistant/binary_sensor/teams/state"
+      availability_topic: "homeassistant/binary_sensor/teams/availability"
+      unique_id: "netsense_teams_01"
+
+    pcap:
+      active_threshold: 5
+      on_delay: 2s
+      off_delay: 30s
+
+    filters:
+      - service: "Teams Media (Audio/Video)"
+        direction: "both"
+        protocols: ["udp"]
+        portranges: ["3478-3481"]
+        cidrs:
+          - "13.107.64.0/18"
+          - "52.112.0.0/14"
+          - "52.120.0.0/14"
+
+  - name: "Streaming"
+    homeassistant:
+      name: "Netflix Active"
+      device_class: "connectivity"
+      state_topic: "homeassistant/binary_sensor/netflix/state"
+      availability_topic: "homeassistant/binary_sensor/netflix/availability"
+      unique_id: "netsense_netflix_01"
+
+    pcap:
+      active_threshold: 10
+      on_delay: 10s
+      off_delay: 60s
+
+    filters:
+      - service: "Netflix Traffic"
+        direction: "dst"
+        protocols: ["tcp"]
+        portranges: ["443"]
+        cidrs:
+          - "23.246.0.0/18"
+          - "45.57.0.0/17"

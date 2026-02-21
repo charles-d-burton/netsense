@@ -1,0 +1,52 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache: true
+
+      - name: Install cross-compilation toolchains
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo apt-get update
+          sudo apt-get install -y \
+            libpcap-dev \
+            libpcap-dev:arm64 \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            mingw-w64
+
+      - name: Download Windows pcap headers
+        run: |
+          # Download WpdPack (WinPcap Developer's Pack) for cross-compiling
+          curl -L https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip -o WpdPack.zip
+          unzip WpdPack.zip
+          echo "WINDOWS_PCAP_CFLAGS=-I$(pwd)/WpdPack/Include" >> $GITHUB_ENV
+          echo "WINDOWS_PCAP_LDFLAGS=-L$(pwd)/WpdPack/Lib/x64" >> $GITHUB_ENV
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

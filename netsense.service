@@ -1,0 +1,26 @@
+[Unit]
+Description=NetSense Network Monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Ensure the path below matches your installed location
+ExecStart=/usr/bin/netsense
+# NetSense looks for config.yaml here if not found in current dir
+WorkingDirectory=/etc/netsense
+User=charles
+Group=charles
+Restart=always
+RestartSec=5
+
+# Privileges: Allow raw packet capture without running as root
+CapabilityBoundingSet=CAP_NET_RAW CAP_NET_ADMIN
+AmbientCapabilities=CAP_NET_RAW CAP_NET_ADMIN
+NoNewPrivileges=yes
+
+# Basic Sandboxing
+ProtectSystem=full
+ProtectHome=read-only
+
+[Install]
+WantedBy=multi-user.target

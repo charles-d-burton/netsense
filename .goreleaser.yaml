@@ -1,0 +1,105 @@
+# .goreleaser.yaml
+version: 2
+
+project_name: netsense
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  # Linux AMD64
+  - id: linux-amd64
+    binary: netsense
+    goos:
+      - linux
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=1
+    ldflags:
+      - -s -w
+
+  # Linux ARM64 (Requires 'aarch64-linux-gnu-gcc' installed)
+  - id: linux-arm64
+    binary: netsense
+    goos:
+      - linux
+    goarch:
+      - arm64
+    env:
+      - CGO_ENABLED=1
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+      - CGO_CFLAGS="-I/usr/aarch64-linux-gnu/include"
+      - CGO_LDFLAGS="-L/usr/aarch64-linux-gnu/lib"
+    ldflags:
+      - -s -w
+
+  # Windows AMD64 (Requires 'mingw-w64' installed)
+  - id: windows-amd64
+    binary: netsense
+    goos:
+      - windows
+    goarch:
+      - amd64
+    env:
+      - CGO_ENABLED=1
+      - CC=x86_64-w64-mingw32-gcc
+      - CXX=x86_64-w64-mingw32-g++
+      # These will be provided by the CI environment
+      - CGO_CFLAGS={{ .Env.WINDOWS_PCAP_CFLAGS }}
+      - CGO_LDFLAGS={{ .Env.WINDOWS_PCAP_LDFLAGS }}
+    ldflags:
+      - -s -w
+
+archives:
+  - format: tar.gz
+    # use zip for windows
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- .Arch }}
+    files:
+      - README.md
+      - config.yaml
+
+# Generate .deb packages for Linux
+nfpms:
+  - id: default
+    file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Arch }}"
+    vendor: "Charles D. Burton"
+    homepage: "https://github.com/charles-d-burton/netsense"
+    maintainer: "Charles D. Burton"
+    description: "Network Traffic Monitor for Home Automation"
+    license: "MIT"
+    formats:
+      - deb
+    bindir: /usr/bin
+    contents:
+      - src: config.yaml
+        dst: /etc/netsense/config.yaml
+        type: config
+      - src: README.md
+        dst: /usr/share/doc/netsense/README.md
+      - src: netsense.service
+        dst: /lib/systemd/system/netsense.service
+    scripts:
+      postinstall: scripts/postinstall.sh
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
