@@ -179,7 +179,15 @@ func (m *MqttManager) Start(ctx context.Context) error {
 				if !m.client.IsConnected() {
 					backoff := exponentialBackoff(attempts, m.config.ReconnectBackoff, maxReconnectBackoff)
 					m.logger.Info("reconnecting", "backoff", backoff, "attempt", attempts+1)
-					time.Sleep(backoff)
+					
+					timer := time.NewTimer(backoff)
+					select {
+					case <-ctx.Done():
+						timer.Stop()
+						return
+					case <-timer.C:
+					}
+
 					if err := m.connectFn(ctx); err != nil {
 						attempts++
 						continue

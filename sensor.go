@@ -17,21 +17,25 @@ type Sensor struct {
 	Mqtt     *MqttManager
 	Debounce *StateDebouncer
 	logger   *slog.Logger
-	
+	filter   string
+
 	packetCount atomic.Int64
 	bpfs        sync.Map // layers.LinkType -> *pcap.BPF
+	bpfMu       sync.Mutex
 }
 
 func NewSensor(config SensorConfig, mqtt *MqttManager, logger *slog.Logger) *Sensor {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Sensor{
+	s := &Sensor{
 		Config:   config,
 		Mqtt:     mqtt,
 		Debounce: NewStateDebouncer(config.Pcap.OnDelay, config.Pcap.OffDelay),
 		logger:   logger.With("sensor", config.Name),
 	}
+	s.filter = BuildBPFFilter(config.Filters)
+	return s
 }
 
 func (s *Sensor) Start(ctx context.Context) {
@@ -40,22 +44,28 @@ func (s *Sensor) Start(ctx context.Context) {
 }
 
 func (s *Sensor) OnPacket(packet gopacket.Packet, linkType layers.LinkType) {
-	filter := s.GetBPFFilter()
-	if filter == "" {
+	if s.filter == "" {
 		s.packetCount.Add(1)
 		return
 	}
 
 	bpfObj, ok := s.bpfs.Load(linkType)
 	if !ok {
-		// Compile and store
-		bpf, err := pcap.NewBPF(linkType, 65535, filter)
-		if err != nil {
-			s.logger.Error("failed to compile userspace BPF", "linkType", linkType, "filter", filter, "error", err)
-			return
+		s.bpfMu.Lock()
+		// Double check
+		bpfObj, ok = s.bpfs.Load(linkType)
+		if !ok {
+			// Compile and store
+			bpf, err := pcap.NewBPF(linkType, 65535, s.filter)
+			if err != nil {
+				s.bpfMu.Unlock()
+				s.logger.Error("failed to compile userspace BPF", "linkType", linkType, "filter", s.filter, "error", err)
+				return
+			}
+			s.bpfs.Store(linkType, bpf)
+			bpfObj = bpf
 		}
-		s.bpfs.Store(linkType, bpf)
-		bpfObj = bpf
+		s.bpfMu.Unlock()
 	}
 
 	bpf := bpfObj.(*pcap.BPF)
@@ -68,7 +78,7 @@ func (s *Sensor) OnPacket(packet gopacket.Packet, linkType layers.LinkType) {
 }
 
 func (s *Sensor) GetBPFFilter() string {
-	return BuildBPFFilter(s.Config.Filters)
+	return s.filter
 }
 
 func (s *Sensor) runLoop(ctx context.Context) {

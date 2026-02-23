@@ -61,75 +61,90 @@ Prevent "flickering" of the sensor state during intermittent traffic by adding d
 - `on_delay`: Traffic must be sustained for this long before state becomes `active`.
 - `off_delay`: Traffic must be absent for this long before state becomes `inactive`.
 
-### Process Monitoring
-In addition to packet capture, NetSense can monitor specific processes. If a process in your list is running, the state is considered `active`. This is platform-agnostic.
-
 ## Configuration
 
-Create a `config.yaml` file to define your MQTT settings and traffic filters.
+Create a `config.yaml` file to define your MQTT settings, global device information, and traffic filters.
 
 ### Example Configuration
 
 ```yaml
-# ... (Home Assistant and MQTT config)
-
 mqtt:
-  # ...
-  payload_active: "ON"   # Optional, default: "ON"
-  payload_inactive: "OFF" # Optional, default: "OFF"
+  host: "192.168.1.50"
+  port: "1883"
+  user: "mqtt_user"
+  password: "mqtt_password"
+  client_id: "my_laptop"
 
-pcap:
-  interfaces: ["eth0", "wlan0"] # Optional, default: all non-loopback
-  active_threshold: 1          # Optional, default: 1 (packets per interval)
-  on_delay: 5s                 # Optional, default: 0s
-  off_delay: 30s                # Optional, default: 0s
+device:
+  name: "My Work Laptop"
+  model: "NetSense Monitor"
+  manufacturer: "NetSense"
+  identifiers: ["work_laptop_01"]
 
-process:
-  enabled: true
-  processes:
-    - "Zoom"
-    - "Teams"
-    - "slack"
+sensors:
+  - name: "Zoom"
+    homeassistant:
+      name: "Zoom Meeting"
+      device_class: "connectivity"
+      state_topic: "homeassistant/binary_sensor/zoom/state"
+      availability_topic: "homeassistant/binary_sensor/zoom/availability"
+      unique_id: "netsense_zoom_01"
 
-filters:
-# ...
+    pcap:
+      active_threshold: 5
+      on_delay: 2s
+      off_delay: 30s
+
+    filters:
+      - service: "Zoom Media"
+        direction: "both"
+        protocols: ["udp"]
+        portranges: ["3478-3479", "8801-8810"]
+        cidrs: ["3.235.64.0/19", "50.202.0.0/16"] # etc...
+
+  - name: "Teams"
+    homeassistant:
+      name: "Teams Meeting"
+      device_class: "connectivity"
+      state_topic: "homeassistant/binary_sensor/teams/state"
+      availability_topic: "homeassistant/binary_sensor/teams/availability"
+      unique_id: "netsense_teams_01"
+
+    pcap:
+      active_threshold: 5
+      on_delay: 2s
+      off_delay: 30s
+
+    filters:
+      - service: "Teams Media"
+        direction: "both"
+        protocols: ["udp"]
+        portranges: ["3478-3481"]
 ```
 
 ### Configuration Options
-
-#### `homeassistant`
-
-Defines the entity that will appear in Home Assistant.
-
-- `name`: Display name of the sensor.
-- `device_class`: UI icon/treatment (e.g., `connectivity`, `presence`, `lock`).
-- `state_topic`: MQTT topic where `active` or `inactive` payloads are sent.
-- `unique_id`: Unique identifier for the sensor.
 
 #### `mqtt`
 
 Connection settings for your MQTT broker.
 
-- `host`: Broker IP or hostname.
-- `port`: Broker port (usually 1883).
-- `user` / `password`: Credentials.
+#### `device`
 
-#### `pcap`
+Common device information shared by all sensors (Home Assistant integration).
+- `name`: Human-readable device name.
+- `model`: Device model identifier.
+- `manufacturer`: Device manufacturer.
+- `identifiers`: Unique identifiers for the physical device.
 
-Packet capture tuning.
+#### `sensors`
 
-- `promiscuous`: Set to `true` to capture all traffic on the interface, not just traffic destined for the host.
+A list of sensors to monitor. Each sensor manages its own state and Home Assistant entity.
 
-#### `filters`
-
-A list of rules to match network traffic. If **any** filter matches, the state becomes `active`.
-
-- `cidrs`: List of destination IP ranges (CIDR notation).
-- `portranges`: List of destination ports (e.g., "80", "443", "8000-8010").
-- `protocols`: List of protocols (e.g., "tcp", "udp", "icmp").
-
-**Note:** Within a single filter entry, conditions are ANDed (e.g., "IP is X AND Port is Y"). Across different filter entries, they are ORed.
+- `homeassistant`: HA entity configuration.
+  - `unique_id`: MUST be unique for each sensor.
+- `pcap`: Interface capture and debouncing settings.
+- `filters`: Traffic matching rules.
 
 ## License
 
-[MIT](LICENSE)
+[Apache-2.0](LICENSE)

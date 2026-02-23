@@ -31,6 +31,7 @@ type CaptureManager struct {
 	doneChan  chan string
 	pcapConfig PcapConfig
 	logger     *slog.Logger
+	wg         sync.WaitGroup
 }
 
 func NewCaptureManager(pcapConfig PcapConfig, logger *slog.Logger) *CaptureManager {
@@ -121,7 +122,9 @@ func (cm *CaptureManager) updateHandlers(ctx context.Context, targetInterfaces [
 
 			cm.handlers[iface.Name] = &ifaceCapture{cancel: ifaceCancel, handle: h}
 			
+			cm.wg.Add(1)
 			go func(name string, handle *pcap.Handle, c context.Context) {
+				defer cm.wg.Done()
 				defer handle.Close()
 				linkType := handle.LinkType()
 				packetSource := gopacket.NewPacketSource(handle, linkType)
@@ -177,11 +180,12 @@ func (cm *CaptureManager) getTargetInterfaces() ([]net.Interface, error) {
 
 func (cm *CaptureManager) stopAll() {
 	cm.mu.Lock()
-	defer cm.mu.Unlock()
 	for _, h := range cm.handlers {
 		h.cancel()
 	}
 	cm.handlers = make(map[string]*ifaceCapture)
+	cm.mu.Unlock()
+	cm.wg.Wait()
 }
 
 func ValidateBPFFilter(filter string) error {

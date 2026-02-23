@@ -76,7 +76,7 @@ nfpms:
     homepage: "https://github.com/charles-d-burton/netsense"
     maintainer: "Charles D. Burton"
     description: "Network Traffic Monitor for Home Automation"
-    license: "MIT"
+    license: "Apache-2.0"
     formats:
       - deb
     bindir: /usr/bin
