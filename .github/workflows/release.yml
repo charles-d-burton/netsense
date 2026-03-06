@@ -29,14 +29,7 @@ jobs:
           # Restrict existing sources to amd64 only.
           # Ubuntu 24.04+ uses DEB822 format; older runners use legacy sources.list.
           if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
-            sudo python3 -c "
-import re, sys
-with open('/etc/apt/sources.list.d/ubuntu.sources') as f:
-    content = f.read()
-content = re.sub(r'(Types: deb\n)(?!Architectures:)', r'\1Architectures: amd64\n', content)
-with open('/etc/apt/sources.list.d/ubuntu.sources', 'w') as f:
-    f.write(content)
-"
+            sudo sed -i '/^Types: deb$/a Architectures: amd64' /etc/apt/sources.list.d/ubuntu.sources
           fi
           if [ -s /etc/apt/sources.list ]; then
             sudo sed -i 's/^deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
