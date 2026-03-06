@@ -1,0 +1,36 @@
+# Microsoft Teams active meeting sensor
+# Detects active Teams audio/video by monitoring bidirectional UDP media traffic.
+# Ports 3478-3481 are Teams STUN/TURN for media relay.
+# Ports 50000-50019 are the Teams client media transport range (UDP).
+#
+# IP ranges sourced from Microsoft 365 endpoint ID 11:
+#   https://docs.microsoft.com/en-us/microsoft-365/enterprise/urls-and-ip-address-ranges
+# Verify against current documentation — Microsoft updates these via the endpoints API.
+#
+# Add this entry to the sensors: list in your config.yaml.
+
+- name: "Teams"
+  homeassistant:
+    name: "Teams Meeting"
+    device_class: "connectivity"
+    state_topic: "homeassistant/binary_sensor/teams/state"
+    availability_topic: "homeassistant/binary_sensor/teams/availability"
+    unique_id: "netsense_teams_01"
+
+  pcap:
+    active_threshold: 5
+    on_delay: 2s
+    off_delay: 30s
+
+  filters:
+    - service: "Teams UDP Media"
+      direction: "both"
+      protocols: ["udp"]
+      portranges: ["3478-3481", "50000-50019"]
+      cidrs:
+        # Microsoft Teams media — O365 endpoint category: Optimize
+        - "13.107.64.0/18"
+        - "52.112.0.0/14"
+        - "52.120.0.0/14"
+        - "52.238.119.141/32"
+        - "52.244.160.207/32"

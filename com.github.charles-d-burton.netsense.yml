@@ -1,0 +1,25 @@
+app-id: com.github.charles-d-burton.netsense
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.golang
+command: netsense
+finish-args:
+  - --share=network
+  - --device=all  # Required for libpcap to access network interfaces
+  - --filesystem=xdg-config/netsense:create # Allow access to user config
+modules:
+  - name: netsense
+    buildsystem: simple
+    build-commands:
+      # Enable Go from the SDK extension and build
+      # We use -mod=vendor to ensure offline build capability (standard for Flatpak)
+      - . /usr/lib/sdk/golang/enable.sh && go build -mod=vendor -o netsense .
+      - install -D netsense /app/bin/netsense
+      # Install default config to /app/etc which is read-only, 
+      # but app looks in /etc/netsense (inside sandbox) or ~/.config/netsense
+      - install -D config.yaml /app/etc/netsense/config.yaml
+    sources:
+      - type: dir
+        path: .

@@ -1,0 +1,38 @@
+# GoToMeeting active meeting sensor
+# Detects active GoToMeeting sessions by monitoring bidirectional UDP media traffic.
+# GoToMeeting uses UDP for audio and video transport on the ports listed below.
+# Port 8080 is the primary audio/video relay; 18070-18230 are additional media ports.
+#
+# IP ranges sourced from GoTo's published network requirements:
+#   https://support.goto.com/meeting/help/what-firewall-settings-should-i-use-g2m010061
+# Verify against current documentation — GoTo updates these periodically.
+#
+# Add this entry to the sensors: list in your config.yaml.
+
+- name: "GoToMeeting"
+  homeassistant:
+    name: "GoToMeeting Session"
+    device_class: "connectivity"
+    state_topic: "homeassistant/binary_sensor/gotomeeting/state"
+    availability_topic: "homeassistant/binary_sensor/gotomeeting/availability"
+    unique_id: "netsense_gotomeeting_01"
+
+  pcap:
+    active_threshold: 5
+    on_delay: 2s
+    off_delay: 30s
+
+  filters:
+    - service: "GoToMeeting UDP Media"
+      direction: "both"
+      protocols: ["udp"]
+      portranges: ["8080", "18070-18090", "18190-18230"]
+      cidrs:
+        # GoTo (LogMeIn) primary infrastructure
+        - "207.16.48.0/20"
+        - "216.115.20.0/22"
+        - "67.217.56.0/21"
+        - "69.58.16.0/20"
+        - "74.200.208.0/20"
+        - "198.4.0.0/20"
+        - "192.63.64.0/21"

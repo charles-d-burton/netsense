@@ -1,0 +1,45 @@
+# Slack active call sensor
+# Detects active Slack huddles/calls by monitoring bidirectional UDP media traffic.
+# Slack calls use WebRTC; media is relayed through Slack's TURN servers when
+# a direct peer-to-peer path is not available.
+# Port 3478 is STUN; port 443 carries DTLS-SRTP media over UDP.
+#
+# IP ranges sourced from Slack's published calling infrastructure:
+#   https://slack.com/help/articles/360001408563
+# Verify against current documentation — these are the known TURN/media relay ranges.
+#
+# Add this entry to the sensors: list in your config.yaml.
+
+- name: "Slack"
+  homeassistant:
+    name: "Slack Call"
+    device_class: "connectivity"
+    state_topic: "homeassistant/binary_sensor/slack/state"
+    availability_topic: "homeassistant/binary_sensor/slack/availability"
+    unique_id: "netsense_slack_01"
+
+  pcap:
+    active_threshold: 5
+    on_delay: 2s
+    off_delay: 30s
+
+  filters:
+    - service: "Slack UDP Media"
+      direction: "both"
+      protocols: ["udp"]
+      portranges: ["443", "3478"]
+      cidrs:
+        # Slack TURN/media relay servers (US East)
+        - "34.195.202.128/25"
+        - "34.226.5.32/28"
+        - "52.3.77.232/29"
+        - "52.4.22.240/28"
+        - "52.23.161.64/28"
+        # Slack TURN/media relay servers (EU West)
+        - "18.184.99.128/25"
+        - "52.29.113.192/28"
+        - "52.57.213.224/28"
+        # Slack TURN/media relay servers (Asia Pacific)
+        - "13.250.97.128/25"
+        - "52.221.63.96/28"
+        - "52.77.191.224/28"
