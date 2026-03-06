@@ -50,10 +50,10 @@ jobs:
       - name: Download Windows pcap headers
         run: |
           # Download WpdPack (WinPcap Developer's Pack) for cross-compiling
-          curl -L https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip -o WpdPack.zip
-          unzip WpdPack.zip
-          echo "WINDOWS_PCAP_CFLAGS=-I$(pwd)/WpdPack/Include" >> $GITHUB_ENV
-          echo "WINDOWS_PCAP_LDFLAGS=-L$(pwd)/WpdPack/Lib/x64" >> $GITHUB_ENV
+          curl -L https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip -o /tmp/WpdPack.zip
+          unzip /tmp/WpdPack.zip -d /tmp/
+          echo "WINDOWS_PCAP_CFLAGS=-I/tmp/WpdPack/Include" >> $GITHUB_ENV
+          echo "WINDOWS_PCAP_LDFLAGS=-L/tmp/WpdPack/Lib/x64" >> $GITHUB_ENV
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
