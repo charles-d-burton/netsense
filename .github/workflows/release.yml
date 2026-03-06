@@ -38,7 +38,7 @@ jobs:
           echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc) main restricted universe multiverse" | sudo tee /etc/apt/sources.list.d/arm64.list
           echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc)-updates main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
           echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ $(lsb_release -sc)-security main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list.d/arm64.list
-          
+
           sudo apt-get update
           sudo apt-get install -y \
             libpcap-dev \
@@ -49,7 +49,6 @@ jobs:
 
       - name: Download Windows pcap headers
         run: |
-          # Download WpdPack (WinPcap Developer's Pack) for cross-compiling
           curl -L https://www.winpcap.org/install/bin/WpdPack_4_1_2.zip -o /tmp/WpdPack.zip
           unzip /tmp/WpdPack.zip -d /tmp/
           echo "WINDOWS_PCAP_CFLAGS=-I/tmp/WpdPack/Include" >> $GITHUB_ENV

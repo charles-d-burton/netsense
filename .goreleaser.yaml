@@ -20,7 +20,7 @@ builds:
     ldflags:
       - -s -w
 
-  # Linux ARM64 (Requires 'aarch64-linux-gnu-gcc' installed)
+  # Linux ARM64 (cross-compiled via aarch64-linux-gnu-gcc)
   - id: linux-arm64
     binary: netsense
     goos:
@@ -31,12 +31,12 @@ builds:
       - CGO_ENABLED=1
       - CC=aarch64-linux-gnu-gcc
       - CXX=aarch64-linux-gnu-g++
-      - CGO_CFLAGS="-I/usr/include/aarch64-linux-gnu"
-      - CGO_LDFLAGS="-L/usr/lib/aarch64-linux-gnu"
+      - CGO_CFLAGS=-I/usr/include/aarch64-linux-gnu
+      - CGO_LDFLAGS=-L/usr/lib/aarch64-linux-gnu
     ldflags:
       - -s -w
 
-  # Windows AMD64 (Requires 'mingw-w64' installed)
+  # Windows AMD64 (cross-compiled via mingw-w64)
   - id: windows-amd64
     binary: netsense
     goos:
@@ -49,16 +49,16 @@ builds:
       - CXX=x86_64-w64-mingw32-g++
       # These will be provided by the CI environment
       - CGO_CFLAGS={{ .Env.WINDOWS_PCAP_CFLAGS }}
-      - CGO_LDFLAGS={{ .Env.WINDOWS_PCAP_LDFLAGS }}
+      - CGO_LDFLAGS={{ .Env.WINDOWS_PCAP_LDFLAGS }} -lwpcap
     ldflags:
       - -s -w
 
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     # use zip for windows
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
     name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
@@ -66,7 +66,8 @@ archives:
       {{- .Arch }}
     files:
       - README.md
-      - config.yaml
+      - src: example/exampleconfig.yaml
+        dst: config.yaml
 
 # Generate .deb packages for Linux
 nfpms:
@@ -81,7 +82,7 @@ nfpms:
       - deb
     bindir: /usr/bin
     contents:
-      - src: config.yaml
+      - src: example/exampleconfig.yaml
         dst: /etc/netsense/config.yaml
         type: config
       - src: README.md
